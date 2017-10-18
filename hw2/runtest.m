@@ -27,7 +27,7 @@ for i = 1:size(armplan)
         y(j+1) = y(j) + LINKLENGTH_CELLS*sin(armplan(i,j));
     end;
     plot(x,y, 'c-');
-    pause(0.1);
+    pause(0.5);
 end;
 
 %armplan
