@@ -28,17 +28,17 @@ struct PRM_Planner{
     }
   }
 
-  void buildRoadMap(int N, int r) {
+  void buildRoadMap(int numofsamples, double neighborhood_radius) {
     init();
     int i = 0;
-    while(i < N) {
+    while(i < numofsamples) {
       Vertex* new_v = new Vertex(numofDOFs_);
       getRandomVertex(numofDOFs_, new_v);
       if(IsValidArmConfiguration(new_v->getAnglesPtr(), numofDOFs_, map_, x_size_, y_size_)) {
         for(auto v : vertices_) {
           // same neighborhood
           double dist = getDistance(v, new_v);
-          if(dist < r) {
+          if(dist < neighborhood_radius) {
             // connectable
             if(connect(v, new_v, numofDOFs_, map_, x_size_, y_size_)) {
               // update connectivity
@@ -61,9 +61,9 @@ struct PRM_Planner{
     Vertex* entrance = NULL;
     double min_dist = HUGE_VAL;
     for(auto v : vertices_) {
-      double curr_dist = getDistance(start, v);
-      if(curr_dist < min_dist) {
-        if(connect(start, v, numofDOFs_, map_, x_size_, y_size_)) {
+      if(connect(start, v, numofDOFs_, map_, x_size_, y_size_)) {
+        double curr_dist = getDistance(start, v);
+        if(curr_dist < min_dist) {
           entrance = v;
           min_dist = curr_dist;
         }
@@ -87,8 +87,10 @@ struct PRM_Planner{
     for(auto v : vertices_) {
       v->h_value_ = getDistance(v, goal);
       if(connect(v, goal, numofDOFs_, map_, x_size_, y_size_)) {
-        escape = v;
-        min_dist = v->h_value_;
+        if(v->h_value_ < min_dist) {
+          escape = v;
+          min_dist = v->h_value_;
+        }
       }
     }
 

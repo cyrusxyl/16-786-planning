@@ -4,6 +4,7 @@
 #include <math.h>
 #include <vector>
 #include <iostream>
+#include <algorithm>
 
 /* Input Arguments */
 #define	MAP_IN      prhs[0]
@@ -268,19 +269,20 @@ double getDistance(Vertex* v1, Vertex* v2) {
 }
 
 bool connect(Vertex* v1, Vertex* v2, int numofDOFs, double *map, int x_size, int y_size) {
-  std::vector<double> left = v1->angles_;
-  std::vector<double> right = v2->angles_;
+  std::vector<double> step(numofDOFs);
+  for(int d=0; d<numofDOFs; d++) {
+    step[d] = (v2->angles_[d] - v1->angles_[d]) / 10 ;
+  }
+
   bool status = true;
-  for(int i=0; i<4; i++) {
+  for(int i=1; i<10; i++) {
     std::vector<double> interpolated_angles(numofDOFs);
     for(int d=0; d<numofDOFs; d++) {
-      interpolated_angles[d] = (left[d] + right[d]) / 2;
+      interpolated_angles[d] = v1->angles_[d] + step[d] * i;
     }
     if(!IsValidArmConfiguration(&interpolated_angles[0], numofDOFs, map, x_size, y_size)) {
       status = false;
       break;
-    } else {
-      left = interpolated_angles;
     }
   }
   return status;

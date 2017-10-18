@@ -3,11 +3,12 @@
  * planner.c
  *
  *=================================================================*/
-#include "PRM.h"
+#include "prm.h"
+#include "rrt.h"
 #include "mex.h"
 #include "utilities.h"
 
-static void planner(double *map, int x_size, int y_size,
+static void plannerPRM(double *map, int x_size, int y_size,
                     double *armstart_anglesV_rad, double *armgoal_anglesV_rad,
                     int numofDOFs, std::vector<std::vector<double> >& plan, int& planlength) {
   // no plan by default
@@ -15,7 +16,19 @@ static void planner(double *map, int x_size, int y_size,
   PRM_Planner prm(numofDOFs, map, x_size, y_size);
   prm.buildRoadMap(1000, 2*PI);
   prm.query(armstart_anglesV_rad, armgoal_anglesV_rad, plan);
-  planlength = plan.size();3
+  planlength = plan.size();
+
+  return;
+}
+
+static void plannerRRT(double *map, int x_size, int y_size,
+                    double *armstart_anglesV_rad, double *armgoal_anglesV_rad,
+                    int numofDOFs, std::vector<std::vector<double> >& plan, int& planlength) {
+  // no plan by default
+
+  RRT_Planner rrt(numofDOFs, map, x_size, y_size);
+  rrt.query(armstart_anglesV_rad, armgoal_anglesV_rad, plan, 1000, 2*PI);
+  planlength = plan.size();
 
   return;
 }
@@ -70,15 +83,23 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   int planlength = 0;
 
   // you can may be call the corresponding planner function here
-  // if (planner_id == RRT)
-  //{
-  //    plannerRRT(map,x_size,y_size, armstart_anglesV_rad, armgoal_anglesV_rad,
-  //    numofDOFs, &plan, &planlength);
-  //}
+  if (planner_id == RRT) {
+    plannerRRT(map,x_size,y_size, armstart_anglesV_rad, armgoal_anglesV_rad, numofDOFs, plan, planlength);
+  } else if (planner_id == PRM) {
+    plannerPRM(map,x_size,y_size, armstart_anglesV_rad, armgoal_anglesV_rad,
+    numofDOFs, plan, planlength);
+  }
+
+  for(int i=0; i<planlength; i++) {
+    double* angles= &plan[i][0];
+    if(!IsValidArmConfiguration(angles, numofDOFs, map, x_size, y_size)) {
+      std::cout << "configuration " << i << " not valid" << '\n';
+    }
+  }
 
   // dummy planner which only computes interpolated path
-  planner(map, x_size, y_size, armstart_anglesV_rad, armgoal_anglesV_rad,
-          numofDOFs, plan, planlength);
+  // planner(map, x_size, y_size, armstart_anglesV_rad, armgoal_anglesV_rad,
+  //         numofDOFs, plan, planlength);
 
   printf("planner returned plan of length=%d\n", planlength);
 
