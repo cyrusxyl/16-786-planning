@@ -3,18 +3,21 @@
  * planner.c
  *
  *=================================================================*/
+#include "mex.h"
 #include "prm.h"
 #include "rrt.h"
-#include "mex.h"
+#include "rrt_connect.h"
 #include "utilities.h"
 
 static void plannerPRM(double *map, int x_size, int y_size,
-                    double *armstart_anglesV_rad, double *armgoal_anglesV_rad,
-                    int numofDOFs, std::vector<std::vector<double> >& plan, int& planlength) {
+                       double *armstart_anglesV_rad,
+                       double *armgoal_anglesV_rad, int numofDOFs,
+                       std::vector<std::vector<double>> &plan,
+                       int &planlength) {
   // no plan by default
 
   PRM_Planner prm(numofDOFs, map, x_size, y_size);
-  prm.buildRoadMap(1000, 2*PI);
+  prm.buildRoadMap(1000, 2 * PI);
   prm.query(armstart_anglesV_rad, armgoal_anglesV_rad, plan);
   planlength = plan.size();
 
@@ -22,12 +25,28 @@ static void plannerPRM(double *map, int x_size, int y_size,
 }
 
 static void plannerRRT(double *map, int x_size, int y_size,
-                    double *armstart_anglesV_rad, double *armgoal_anglesV_rad,
-                    int numofDOFs, std::vector<std::vector<double> >& plan, int& planlength) {
+                       double *armstart_anglesV_rad,
+                       double *armgoal_anglesV_rad, int numofDOFs,
+                       std::vector<std::vector<double>> &plan,
+                       int &planlength) {
   // no plan by default
 
-  RRT_Planner rrt(numofDOFs, map, x_size, y_size);
-  rrt.query(armstart_anglesV_rad, armgoal_anglesV_rad, plan, 1000, 2*PI);
+  RRT_Planner rrt(numofDOFs, map, x_size, y_size, 1000, 2 * PI);
+  rrt.query(armstart_anglesV_rad, armgoal_anglesV_rad, plan);
+  planlength = plan.size();
+
+  return;
+}
+
+static void plannerRRTConnect(double *map, int x_size, int y_size,
+                              double *armstart_anglesV_rad,
+                              double *armgoal_anglesV_rad, int numofDOFs,
+                              std::vector<std::vector<double>> &plan,
+                              int &planlength) {
+  // no plan by default
+
+  RRT_Connect_Planner rrt_connect(numofDOFs, map, x_size, y_size, 1000, 2 * PI);
+  rrt_connect.query(armstart_anglesV_rad, armgoal_anglesV_rad, plan);
   planlength = plan.size();
 
   return;
@@ -40,7 +59,7 @@ static void plannerRRT(double *map, int x_size, int y_size,
 // plhs should contain output parameters (2):
 // 1st is a 2D matrix plan when each plan[i][j] is the value of jth angle at the
 // ith step of the plan (there are D DoF of the arm (that is, D angles). So, j
-//can take values from 0 to D-1  2nd is planlength (int)
+// can take values from 0 to D-1  2nd is planlength (int)
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
 {
@@ -79,20 +98,24 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   }
 
   // call the planner
-  std::vector<std::vector<double> > plan;
+  std::vector<std::vector<double>> plan;
   int planlength = 0;
 
   // you can may be call the corresponding planner function here
   if (planner_id == RRT) {
-    plannerRRT(map,x_size,y_size, armstart_anglesV_rad, armgoal_anglesV_rad, numofDOFs, plan, planlength);
+    plannerRRT(map, x_size, y_size, armstart_anglesV_rad, armgoal_anglesV_rad,
+               numofDOFs, plan, planlength);
+  } else if (planner_id == RRTCONNECT) {
+    plannerRRTConnect(map, x_size, y_size, armstart_anglesV_rad,
+                      armgoal_anglesV_rad, numofDOFs, plan, planlength);
   } else if (planner_id == PRM) {
-    plannerPRM(map,x_size,y_size, armstart_anglesV_rad, armgoal_anglesV_rad,
-    numofDOFs, plan, planlength);
+    plannerPRM(map, x_size, y_size, armstart_anglesV_rad, armgoal_anglesV_rad,
+               numofDOFs, plan, planlength);
   }
 
-  for(int i=0; i<planlength; i++) {
-    double* angles= &plan[i][0];
-    if(!IsValidArmConfiguration(angles, numofDOFs, map, x_size, y_size)) {
+  for (int i = 0; i < planlength; i++) {
+    double *angles = &plan[i][0];
+    if (!IsValidArmConfiguration(angles, numofDOFs, map, x_size, y_size)) {
       std::cout << "configuration " << i << " not valid" << '\n';
     }
   }

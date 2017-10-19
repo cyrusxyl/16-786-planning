@@ -1,10 +1,11 @@
-#ifndef RRT_H_
-#define RRT_H_
+#ifndef RRT_CONNECT_H_
+#define RRT_CONNECT_H_
 
 #include "utilities.h"
 
-struct RRT_Planner{
-  std::vector<Vertex*> tree_;
+struct RRT_Connect_Planner{
+  std::vector<Vertex*> tree_a_;
+  std::vector<Vertex*> tree_b_;
   int numofDOFs_;
   double* map_;
   int x_size_;
@@ -12,8 +13,9 @@ struct RRT_Planner{
   int numofsamples_;
   double extend_distance_;
 
-  RRT_Planner(int numofDOFs, double*	map, int x_size, int y_size, int numofsamples, double extend_distance) {
-    tree_.clear();
+  RRT_Connect_Planner(int numofDOFs, double*	map, int x_size, int y_size, int numofsamples, double extend_distance) {
+    tree_a_.clear();
+    tree_b_.clear();
     numofDOFs_ = numofDOFs;
     map_ = map;
     x_size_ = x_size;
@@ -23,14 +25,15 @@ struct RRT_Planner{
   }
 
   void init() {
-    tree_.clear();
+    tree_a_.clear();
+    tree_b_.clear();
   }
 
-  Vertex* getNear(Vertex* q_rand) {
+  Vertex* getNear(Vertex* q_rand, std::vector<Vertex*> tree) {
     // find exit from graph and compute heuristic
     Vertex* q_near = NULL;
     double min_dist = HUGE_VAL;
-    for(auto v : tree_) {
+    for(auto v : tree) {
       double curr_dist = getDistance(v, q_rand);
       if(curr_dist < min_dist) {
         q_near = v;
@@ -39,23 +42,6 @@ struct RRT_Planner{
     }
 
     return q_near;
-  }
-
-  Vertex* getTreeEscape(Vertex* goal) {
-    // find exit from graph and compute heuristic
-    Vertex* escape = NULL;
-    double min_dist = HUGE_VAL;
-    for(auto v : tree_) {
-      if(connect(v, goal, numofDOFs_, map_, x_size_, y_size_)) {
-        double curr_dist = getDistance(v, goal);
-        if(curr_dist < min_dist) {
-          escape = v;
-          min_dist = curr_dist;
-        }
-      }
-    }
-
-    return escape;
   }
 
   bool newConfig(Vertex* q_near, Vertex* q_rand, Vertex* q_new) {
@@ -91,15 +77,15 @@ struct RRT_Planner{
     return true;
   }
 
-  int extend(Vertex* q_rand) {
+  int extend(std::vector<Vertex*>& tree, Vertex* q_rand, double extend_distance) {
     int status = 0;
-    Vertex* q_near = getNear(q_rand);
+    Vertex* q_near = getNear(q_rand, tree);
     Vertex* q_new = new Vertex(numofDOFs_);
     if(newConfig(q_near, q_rand, q_new)) {
       // add edge
       q_new->parent_ = q_near;
       // add vertex
-      tree_.push_back(q_new);
+      tree.push_back(q_new);
 
       if(getDistance(q_new, q_rand) < 1e-3) {
         // reached
@@ -112,50 +98,67 @@ struct RRT_Planner{
     return status;
   }
 
-  void buildRRT(Vertex* start) {
+  int connect(std::vector<Vertex*>& tree, Vertex* q) {
+    int S;
+    do {
+      S = extend(tree, q, extend_distance_);
+    }
+    while (S==1);
+    return S;
+  }
+
+  void buildRRT(Vertex* start, Vertex* goal) {
     init();
-    tree_.push_back(start);
+    tree_a_.push_back(start);
+    tree_b_.push_back(goal);
+    std::vector<Vertex*>* tree_a = &tree_a_;
+    std::vector<Vertex*>* tree_b = &tree_b_;
+
     int i = 0;
     while(i < numofsamples_) {
       Vertex* q_rand = new Vertex(numofDOFs_);
       getRandomVertex(numofDOFs_, q_rand);
       if(IsValidArmConfiguration(q_rand->getAnglesPtr(), numofDOFs_, map_, x_size_, y_size_)) {
-        extend(q_rand);
+        if(extend(*tree_a, q_rand, extend_distance_)!=0) {
+          if(connect(*tree_b, tree_a->back())==2) {
+            std::cout << "found path" << '\n';
+            break;
+          }
+        }
+        std::swap(tree_a, tree_b);
         i++;
       }
     }
   }
 
-  void retrievePath(Vertex* goal, std::vector<std::vector<double> >& plan) {
+  void retrievePath(std::vector<std::vector<double> >& plan) {
     plan.clear();
-    Vertex* escape = getTreeEscape(goal);
-    if(escape != NULL) {
-      std::cout << "tree exit: " << escape << std::endl;
-      goal->parent_ = escape;
-    } else {
-      std::cout << "cannot find exit from tree" << std::endl;
+    //check if connected
+    if(getDistance(tree_a_.back(), tree_b_.back()) > 1e-3) {
+      std::cout << "not connected" << '\n';
+      return;
     }
 
-    for(Vertex* v=goal; v!=NULL; v=v->parent_) {
-      std::cout << "[ ";
-      for(int i=0; i<numofDOFs_; i++) {
-        std::cout << v->angles_[i] << " ";
-      }
-      std::cout << "]\n";
+    for(Vertex* v=tree_a_.back(); v!=NULL; v=v->parent_) {
+      plan.push_back(v->angles_);
+    }
+    std::reverse(plan.begin(),plan.end());
+
+    for(Vertex* v=tree_b_.back(); v!=NULL; v=v->parent_) {
       plan.push_back(v->angles_);
     }
   }
 
   void query(double* start_angles, double* goal_angles, std::vector<std::vector<double> >& plan) {
     // reverse search
-    Vertex* start = new Vertex(goal_angles, numofDOFs_);
-    Vertex* goal = new Vertex(start_angles, numofDOFs_);
+    Vertex* start = new Vertex(start_angles, numofDOFs_);
+    Vertex* goal = new Vertex(goal_angles, numofDOFs_);
 
     // connect start and goal to graph
-    buildRRT(start);
+    buildRRT(start, goal);
 
     // retrieve path, backward result of reversed search, path is start to goal
-    retrievePath(goal, plan);
+    retrievePath(plan);
   }
 };
 
