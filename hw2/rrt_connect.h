@@ -143,6 +143,7 @@ struct RRT_Connect_Planner{
       plan.push_back(v->angles_);
     }
     std::reverse(plan.begin(),plan.end());
+    plan.pop_back();
 
     for(Vertex* v=tree_b_.back(); v!=NULL; v=v->parent_) {
       plan.push_back(v->angles_);

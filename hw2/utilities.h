@@ -270,12 +270,14 @@ double getDistance(Vertex* v1, Vertex* v2) {
 
 bool connect(Vertex* v1, Vertex* v2, int numofDOFs, double *map, int x_size, int y_size) {
   std::vector<double> step(numofDOFs);
+  int numsteps = getDistance(v1, v2) / (PI/20) + 1;
+
   for(int d=0; d<numofDOFs; d++) {
-    step[d] = (v2->angles_[d] - v1->angles_[d]) / 10 ;
+    step[d] = (v2->angles_[d] - v1->angles_[d]) / numsteps ;
   }
 
   bool status = true;
-  for(int i=1; i<10; i++) {
+  for(int i=1; i<=numsteps; i++) {
     std::vector<double> interpolated_angles(numofDOFs);
     for(int d=0; d<numofDOFs; d++) {
       interpolated_angles[d] = v1->angles_[d] + step[d] * i;

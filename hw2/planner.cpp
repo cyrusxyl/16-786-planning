@@ -7,6 +7,7 @@
 #include "prm.h"
 #include "rrt.h"
 #include "rrt_connect.h"
+#include "rrt_star.h"
 #include "utilities.h"
 
 static void plannerPRM(double *map, int x_size, int y_size,
@@ -17,7 +18,7 @@ static void plannerPRM(double *map, int x_size, int y_size,
   // no plan by default
 
   PRM_Planner prm(numofDOFs, map, x_size, y_size);
-  prm.buildRoadMap(1000, 2 * PI);
+  prm.buildRoadMap(1000, 2*PI);
   prm.query(armstart_anglesV_rad, armgoal_anglesV_rad, plan);
   planlength = plan.size();
 
@@ -31,7 +32,7 @@ static void plannerRRT(double *map, int x_size, int y_size,
                        int &planlength) {
   // no plan by default
 
-  RRT_Planner rrt(numofDOFs, map, x_size, y_size, 1000, 2 * PI);
+  RRT_Planner rrt(numofDOFs, map, x_size, y_size, 1000, 2*PI);
   rrt.query(armstart_anglesV_rad, armgoal_anglesV_rad, plan);
   planlength = plan.size();
 
@@ -45,8 +46,20 @@ static void plannerRRTConnect(double *map, int x_size, int y_size,
                               int &planlength) {
   // no plan by default
 
-  RRT_Connect_Planner rrt_connect(numofDOFs, map, x_size, y_size, 1000, 2 * PI);
+  RRT_Connect_Planner rrt_connect(numofDOFs, map, x_size, y_size, 1000, 2*PI);
   rrt_connect.query(armstart_anglesV_rad, armgoal_anglesV_rad, plan);
+  planlength = plan.size();
+
+  return;
+}
+
+static void plannerRRTStar(double *map, int x_size, int y_size,
+                              double *armstart_anglesV_rad,
+                              double *armgoal_anglesV_rad, int numofDOFs,
+                              std::vector<std::vector<double>> &plan,
+                              int &planlength) {
+  RRT_Star_Planner rrt_star(numofDOFs, map, x_size, y_size, 1000, 2*PI, 3*PI);
+  rrt_star.query(armstart_anglesV_rad, armgoal_anglesV_rad, plan);
   planlength = plan.size();
 
   return;
@@ -108,9 +121,14 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   } else if (planner_id == RRTCONNECT) {
     plannerRRTConnect(map, x_size, y_size, armstart_anglesV_rad,
                       armgoal_anglesV_rad, numofDOFs, plan, planlength);
+  } else if (planner_id == RRTSTAR) {
+    plannerRRTStar(map, x_size, y_size, armstart_anglesV_rad,
+                      armgoal_anglesV_rad, numofDOFs, plan, planlength);
   } else if (planner_id == PRM) {
     plannerPRM(map, x_size, y_size, armstart_anglesV_rad, armgoal_anglesV_rad,
                numofDOFs, plan, planlength);
+  } else {
+    std::cout << "invalid planner id" << '\n';
   }
 
   for (int i = 0; i < planlength; i++) {

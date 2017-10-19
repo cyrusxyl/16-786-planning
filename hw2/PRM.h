@@ -61,9 +61,9 @@ struct PRM_Planner{
     Vertex* entrance = NULL;
     double min_dist = HUGE_VAL;
     for(auto v : vertices_) {
-      if(connect(start, v, numofDOFs_, map_, x_size_, y_size_)) {
-        double curr_dist = getDistance(start, v);
-        if(curr_dist < min_dist) {
+      double curr_dist = getDistance(start, v);
+      if(curr_dist < min_dist) {
+        if(connect(start, v, numofDOFs_, map_, x_size_, y_size_)) {
           entrance = v;
           min_dist = curr_dist;
         }
@@ -86,8 +86,8 @@ struct PRM_Planner{
     double min_dist = HUGE_VAL;
     for(auto v : vertices_) {
       v->h_value_ = getDistance(v, goal);
-      if(connect(v, goal, numofDOFs_, map_, x_size_, y_size_)) {
-        if(v->h_value_ < min_dist) {
+      if(v->h_value_ < min_dist) {
+        if(connect(v, goal, numofDOFs_, map_, x_size_, y_size_)) {
           escape = v;
           min_dist = v->h_value_;
         }

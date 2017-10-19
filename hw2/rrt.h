@@ -46,9 +46,9 @@ struct RRT_Planner{
     Vertex* escape = NULL;
     double min_dist = HUGE_VAL;
     for(auto v : tree_) {
-      if(connect(v, goal, numofDOFs_, map_, x_size_, y_size_)) {
-        double curr_dist = getDistance(v, goal);
-        if(curr_dist < min_dist) {
+      double curr_dist = getDistance(v, goal);
+      if(curr_dist < min_dist) {
+        if(connect(v, goal, numofDOFs_, map_, x_size_, y_size_)) {
           escape = v;
           min_dist = curr_dist;
         }
@@ -65,13 +65,14 @@ struct RRT_Planner{
       q_new->angles_[d] = q_near->angles_[d] + norm * (q_rand->angles_[d] - q_near->angles_[d]);
     }
 
+    int numsteps = getDistance(q_near, q_new) / (PI/20) + 1;
     // step towards maximum extendable config
     std::vector<double> step(numofDOFs_);
     for(int d=0; d<numofDOFs_; d++) {
-      step[d] = (q_new->angles_[d] - q_near->angles_[d]) / 10 ;
+      step[d] = (q_new->angles_[d] - q_near->angles_[d]) / numsteps ;
     }
 
-    for(int i=1; i<=10; i++) {
+    for(int i=1; i<=numsteps; i++) {
       std::vector<double> interpolated_angles(numofDOFs_);
       for(int d=0; d<numofDOFs_; d++) {
         interpolated_angles[d] = q_near->angles_[d] + step[d] * i;
