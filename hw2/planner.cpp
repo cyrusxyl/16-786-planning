@@ -142,7 +142,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   // planner(map, x_size, y_size, armstart_anglesV_rad, armgoal_anglesV_rad,
   //         numofDOFs, plan, planlength);
 
-  printf("planner returned plan of length=%d\n", planlength);
+  printf("%d\n", planlength);
 
   /* Create return values */
   if (planlength > 0) {

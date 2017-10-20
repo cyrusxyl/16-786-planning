@@ -50,14 +50,14 @@ struct RRT_Connect_Planner{
     for(int d=0; d<numofDOFs_; d++) {
       q_new->angles_[d] = q_near->angles_[d] + norm * (q_rand->angles_[d] - q_near->angles_[d]);
     }
-
+    int numsteps = getDistance(q_near, q_new) / (PI/20) + 1;
     // step towards maximum extendable config
     std::vector<double> step(numofDOFs_);
     for(int d=0; d<numofDOFs_; d++) {
-      step[d] = (q_new->angles_[d] - q_near->angles_[d]) / 10 ;
+      step[d] = (q_new->angles_[d] - q_near->angles_[d]) / numsteps ;
     }
 
-    for(int i=1; i<=10; i++) {
+    for(int i=1; i<=numsteps; i++) {
       std::vector<double> interpolated_angles(numofDOFs_);
       for(int d=0; d<numofDOFs_; d++) {
         interpolated_angles[d] = q_near->angles_[d] + step[d] * i;
@@ -121,7 +121,7 @@ struct RRT_Connect_Planner{
       if(IsValidArmConfiguration(q_rand->getAnglesPtr(), numofDOFs_, map_, x_size_, y_size_)) {
         if(extend(*tree_a, q_rand, extend_distance_)!=0) {
           if(connect(*tree_b, tree_a->back())==2) {
-            std::cout << "found path" << '\n';
+            // std::cout << "found path" << '\n';
             break;
           }
         }
@@ -139,18 +139,29 @@ struct RRT_Connect_Planner{
       return;
     }
 
+    double cost = 0.0;
     for(Vertex* v=tree_a_.back(); v!=NULL; v=v->parent_) {
       plan.push_back(v->angles_);
+      if(v->parent_ != NULL) {
+        cost += getDistance(v, v->parent_);
+      }
     }
     std::reverse(plan.begin(),plan.end());
     plan.pop_back();
 
     for(Vertex* v=tree_b_.back(); v!=NULL; v=v->parent_) {
+      if(v->parent_ != NULL) {
+        cost += getDistance(v, v->parent_);
+      }
       plan.push_back(v->angles_);
     }
+
+    std::cout << cost  << '\n';
   }
 
   void query(double* start_angles, double* goal_angles, std::vector<std::vector<double> >& plan) {
+    time_t t1, t2;
+    t1 = clock();
     // reverse search
     Vertex* start = new Vertex(start_angles, numofDOFs_);
     Vertex* goal = new Vertex(goal_angles, numofDOFs_);
@@ -160,6 +171,8 @@ struct RRT_Connect_Planner{
 
     // retrieve path, backward result of reversed search, path is start to goal
     retrievePath(plan);
+    t2 = clock();
+    std::cout << ((float)t2-(float)t1)/CLOCKS_PER_SEC << '\n';
   }
 };
 

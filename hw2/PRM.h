@@ -72,7 +72,7 @@ struct PRM_Planner{
     if(entrance!=NULL) {
       entrance->g_value_ = min_dist;
       entrance->parent_ = start;
-      std::cout << "graph entrace: " << entrance << std::endl;
+      // std::cout << "graph entrace: " << entrance << std::endl;
     } else {
       std::cout << "cannot find entrance to graph" << std::endl;
     }
@@ -95,7 +95,7 @@ struct PRM_Planner{
     }
 
     if(escape != NULL) {
-      std::cout << "graph exit: " << escape << std::endl;
+      // std::cout << "graph exit: " << escape << std::endl;
       goal->parent_ = escape;
     } else {
       std::cout << "cannot find entrance to graph" << std::endl;
@@ -133,7 +133,7 @@ struct PRM_Planner{
     }
 
     if(found_path) {
-      std::cout << "Route Found\n" << std::endl;
+      // std::cout << "Route Found\n" << std::endl;
     } else {
       std::cout << "Find Path Failed\n" << std::endl;
     }
@@ -141,17 +141,24 @@ struct PRM_Planner{
 
   void retrievePath(Vertex* start, Vertex* goal, std::vector<std::vector<double> >& plan) {
     plan.clear();
+    double cost = 0.0;
     for(Vertex* v=goal; v!=NULL; v=v->parent_) {
-      std::cout << "[ ";
-      for(int i=0; i<numofDOFs_; i++) {
-        std::cout << v->angles_[i] << " ";
+      if(v->parent_ != NULL) {
+        cost += getDistance(v, v->parent_);
       }
-      std::cout << "]\n";
+      // std::cout << "[ ";
+      // for(int i=0; i<numofDOFs_; i++) {
+      //   std::cout << v->angles_[i] << " ";
+      // }
+      // std::cout << "]\n";
       plan.push_back(v->angles_);
     }
+    std::cout << cost  << '\n';
   }
 
   void query(double* start_angles, double* goal_angles, std::vector<std::vector<double> >& plan) {
+    time_t t1, t2;
+    t1 = clock();
     // reverse search
     Vertex* start = new Vertex(goal_angles, numofDOFs_);
     Vertex* goal = new Vertex(start_angles, numofDOFs_);
@@ -163,6 +170,8 @@ struct PRM_Planner{
     computePath(entrance, escape);
     // retrieve path, backward result of reversed search, path is start to goal
     retrievePath(start, goal, plan);
+    t2 = clock();
+    std::cout << ((float)t2-(float)t1)/CLOCKS_PER_SEC << '\n';
     // reset A-star search values
     resetGraphStatus();
   }

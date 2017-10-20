@@ -206,7 +206,7 @@ struct RRT_Star_Planner {
     plan.clear();
     Vertex *escape = getTreeEscape(goal);
     if (escape != NULL) {
-      std::cout << "tree exit: " << escape << std::endl;
+      // std::cout << "tree exit: " << escape << std::endl;
       goal->parent_ = escape;
     } else {
       std::cout << "cannot find exit from tree" << std::endl;
@@ -220,11 +220,13 @@ struct RRT_Star_Planner {
       // std::cout << "]\n";
       plan.push_back(v->angles_);
     }
-    std::cout << "goal cost = " << goal->g_value_  << '\n';
+    std::cout << goal->g_value_  << '\n';
   }
 
   void query(double *start_angles, double *goal_angles,
              std::vector<std::vector<double>> &plan) {
+     time_t t1, t2;
+     t1 = clock();
     // reverse search
     Vertex *start = new Vertex(goal_angles, numofDOFs_);
     Vertex *goal = new Vertex(start_angles, numofDOFs_);
@@ -238,6 +240,8 @@ struct RRT_Star_Planner {
     //   expandRRT(10);
     //   retrievePath(goal, plan);
     // }
+    t2 = clock();
+    std::cout << ((float)t2-(float)t1)/CLOCKS_PER_SEC << '\n';
   }
 };
 

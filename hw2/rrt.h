@@ -131,24 +131,31 @@ struct RRT_Planner{
     plan.clear();
     Vertex* escape = getTreeEscape(goal);
     if(escape != NULL) {
-      std::cout << "tree exit: " << escape << std::endl;
+      // std::cout << "tree exit: " << escape << std::endl;
       goal->parent_ = escape;
     } else {
       std::cout << "cannot find exit from tree" << std::endl;
     }
 
+    double cost = 0.0;
     for(Vertex* v=goal; v!=NULL; v=v->parent_) {
-      std::cout << "[ ";
-      for(int i=0; i<numofDOFs_; i++) {
-        std::cout << v->angles_[i] << " ";
+      if(v->parent_ != NULL) {
+        cost += getDistance(v, v->parent_);
       }
-      std::cout << "]\n";
+      // std::cout << "[ ";
+      // for(int i=0; i<numofDOFs_; i++) {
+      //   std::cout << v->angles_[i] << " ";
+      // }
+      // std::cout << "]\n";
       plan.push_back(v->angles_);
     }
+    std::cout << cost  << '\n';
   }
 
   void query(double* start_angles, double* goal_angles, std::vector<std::vector<double> >& plan) {
     // reverse search
+    time_t t1, t2;
+    t1 = clock();
     Vertex* start = new Vertex(goal_angles, numofDOFs_);
     Vertex* goal = new Vertex(start_angles, numofDOFs_);
 
@@ -157,6 +164,8 @@ struct RRT_Planner{
 
     // retrieve path, backward result of reversed search, path is start to goal
     retrievePath(goal, plan);
+    t2 = clock();
+    std::cout << ((float)t2-(float)t1)/CLOCKS_PER_SEC << '\n';
   }
 };
 
