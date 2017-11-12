@@ -61,12 +61,7 @@ struct State {
   }
 
   int getBase(int item) {
-    for (int i = 0; i < on_len_; i++) {
-      if (on_literals_[i].first == item) {
-        return on_literals_[i].second;
-      }
-    }
-    return -1;
+    return on_literals_[item].second;
   }
 
   static bool isSame(const State &A, const State &B) {
