@@ -68,11 +68,14 @@ struct State {
     if (!(A.clear_literals_ == B.clear_literals_)) {
       return false;
     }
-    for (int i = 0; i < A.on_len_; i++) {
-      if (!(A.on_literals_[i] == B.on_literals_[i])) {
-        return false;
-      }
+    if (!(A.on_literals_ == B.on_literals_)) {
+      return false;
     }
+    // for (int i = 0; i < A.on_len_; i++) {
+    //   if (!(A.on_literals_[i] == B.on_literals_[i])) {
+    //     return false;
+    //   }
+    // }
     return true;
   }
 
