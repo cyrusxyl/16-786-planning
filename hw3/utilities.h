@@ -43,7 +43,6 @@ struct State {
   int h_value_ = HUGE_VAL;
   State *parent_ = NULL;
   Action moveToReachHere_;
-  bool closed_ = false;
 
   State() {
     on_len_ = 0;
@@ -181,13 +180,13 @@ struct World {
 
   int getHeuristic(State *currentState) {
     int notSatisfied = 0;
-    for (int i = 0; i < goal_->clear_len_; i++) {
-      if (!binary_search(currentState->clear_literals_.begin(),
-                         currentState->clear_literals_.end(),
-                         goal_->clear_literals_[i])) {
-        notSatisfied++;
-      }
-    }
+    // for (int i = 0; i < goal_->clear_len_; i++) {
+    //   if (!binary_search(currentState->clear_literals_.begin(),
+    //                      currentState->clear_literals_.end(),
+    //                      goal_->clear_literals_[i])) {
+    //     notSatisfied++;
+    //   }
+    // }
 
     for (int i = 0; i < goal_->on_len_; i++) {
       if (!binary_search(currentState->on_literals_.begin(),
@@ -243,10 +242,12 @@ struct World {
     start_->g_value_ = 0;
     start_->h_value_ = getHeuristic(start_);
     OPEN.push_back(start_);
+    int count = 0;
     while (!OPEN.empty()) {
       State *s = OPEN[0];
       OPEN.erase(OPEN.begin());
       CLOSED.push_back(s);
+      count++;
       // printf("expanding state:\n");
       // s->printState();
       if (s->h_value_ == 0) {
@@ -289,7 +290,7 @@ struct World {
     }
 
     if (found_path) {
-      printf("found a path\n");
+      printf("found a path, expanded %d states\n", count);
     } else {
       printf("somethings wrong\n");
       return plan;
