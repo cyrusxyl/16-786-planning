@@ -241,7 +241,7 @@ struct World {
     vector<State *> OPEN;
     vector<State *> CLOSED;
     start_->g_value_ = 0;
-    start_->h_value_ = HUGE_VAL;
+    start_->h_value_ = getHeuristic(start_);
     OPEN.push_back(start_);
     while (!OPEN.empty()) {
       State *s = OPEN[0];

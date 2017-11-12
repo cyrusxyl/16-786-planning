@@ -1,0 +1,10 @@
+blocksV = [0 1 3 4];
+trianglesV = [2 5];
+TableIndex = 6;
+onV_start = [0 6; 1 0; 2 1; 3 6; 4 3; 5 4];
+clearV_start = [2 5];
+onV_goal = [0 6; 1 3; 2 4; 3 6; 4 0; 5 1];
+clearV_goal = [2 5];
+moveActionIndex = 0;
+moveToTableActionIndex = 1;
+runtest(blocksV, trianglesV, TableIndex, onV_start, clearV_start, onV_goal, clearV_goal, moveActionIndex, moveToTableActionIndex);
